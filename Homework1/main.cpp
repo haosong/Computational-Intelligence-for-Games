@@ -97,11 +97,7 @@ int main(int argc, char **argv) {
         } else if (argc == 2) {
             std::string position(argv[1]);
             std::vector<int> pins = readPosition(position);
-            if (pins.empty()) {
-                std::cout << "LOSS" << std::endl;
-                return 0;
-            }
-            std::vector<int> grundy = generateGrundyNumberList(*std::max_element(std::begin(pins), std::end(pins)));
+            std::vector<int> grundy = generateGrundyNumberList(position.length());
             if (isPPos(pins, grundy)) std::cout << "LOSS" << std::endl;
             else makeMove(position, grundy);
         }
