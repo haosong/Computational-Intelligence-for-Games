@@ -39,8 +39,8 @@ def getPayoff(cur_down, down_yards, touchdown_yards, time):
             payoff = 0
             for k in range(0, 5):
                 play = plays[i][j][k]
-                new_time = time / 5 - play[1]
-                if new_time >= 0 and not play[2]: # Not turn over and still have time
+                new_time = max(0, time / 5 - play[1])
+                if not play[2]: # Not turn over and still have time
                     gain_yards = play[0]
                     new_touchdown_yards = max(0, touchdown_yards - gain_yards)
                     if new_touchdown_yards == 0:
