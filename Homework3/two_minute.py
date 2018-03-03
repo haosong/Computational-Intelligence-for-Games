@@ -94,7 +94,7 @@ def main(argv):
         elif len(argv) == 5:
             P = getPayoff(argv[1], argv[2], argv[3], argv[4])
             getEquilibrium(P)
-    except ValueError:
+    except:
         pass
 
 
