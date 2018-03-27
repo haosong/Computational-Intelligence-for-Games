@@ -1,0 +1,6 @@
+#!/bin/bash
+if [ "$1" == "-heuristic" ]; then
+    pypy3 test_kalah.py "$@"
+else
+    pypy3 test_kalah_renamed.py "$@"
+fi
