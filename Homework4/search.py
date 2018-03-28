@@ -99,3 +99,15 @@ def depth_unlimited_search_strategy(depth, h):
         return move
 
     return fxn
+
+
+def heuristic(pos):
+    if pos.game_over():
+        value = pos._winner() * (pos._seeds_stored(0) + pos._seeds_stored(1))
+    else:
+        # 0.15: 0.5605
+        # 0.16: 0.569
+        # 0.17: 0.568
+        alpha = 0.16
+        value = (1 - alpha) * (pos._seeds_stored(0) - pos._seeds_stored(1)) + alpha * (pos._seeds_left[0] - pos._seeds_left[1])
+    return value
