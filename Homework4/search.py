@@ -48,7 +48,7 @@ def depth_limited_search_strategy(depth, h):
 
 # alpha-beta with tt
 def depth_unlimited_search(pos, alpha, beta, depth, h):
-    if pos in tt.keys():
+    if pos in tt:
         [low, up], move, d = tt[pos]
         if d >= depth and (low == up or low >= beta or up <= alpha):
             return [low, up], move
