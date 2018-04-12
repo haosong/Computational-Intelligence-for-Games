@@ -1,0 +1,11 @@
+#!/bin/bash
+# 1000 iterations
+
+trap "/usr/bin/killall -q -u $USER MCTS 2>/dev/null" 0 1 2 3 9 15
+trap "/bin/rm -f $STDERR" 0 1 2 3 9 15
+
+/c/cs474/bin/run -stderr=/dev/null ./MCTS -game 100 4 0.1 0.5 1000 < /dev/null
+
+# clean up temp file
+cd ..
+rm -rf temp
