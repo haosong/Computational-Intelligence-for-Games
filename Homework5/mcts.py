@@ -17,12 +17,13 @@ class Node:
         self.untriedMoves = state.legal_moves()
 
     def uct_select_child(self, isMaxPlayer):
-        if isMaxPlayer:
-            s = sorted(self.childNodes, key=lambda c: c.wins / c.visits + sqrt(2 * log(self.visits) / c.visits))[-1]
-        else:
-            s = sorted(self.childNodes, key=lambda c: c.wins / c.visits - sqrt(2 * log(self.visits) / c.visits))[0]
-        s.parentNode = self
-        return s
+        #if isMaxPlayer:
+        s = sorted(self.childNodes, key=lambda c: nodeMap[c].wins / nodeMap[c].visits + sqrt(2 * log(self.visits) / nodeMap[c].visits))[-1]
+        #else:
+        # s = sorted(self.childNodes, key=lambda c: nodeMap[c].wins / nodeMap[c].visits - sqrt(2 * log(self.visits) / nodeMap[c].visits))[0]
+        node = nodeMap[s]
+        node.parentNode = self
+        return node
 
     def add_child(self, move, state, existed):
         n = nodeMap[state] if existed else Node(move=move, parent=self, state=state)
@@ -31,7 +32,7 @@ class Node:
             n.parentNode = self
         nodeMap[state] = n
         self.untriedMoves.remove(move)
-        self.childNodes.append(n)
+        self.childNodes.append(state)
         return n
 
     def update(self, result):
@@ -40,24 +41,27 @@ class Node:
 
 
 def uct(rootstate, itermax):
-    """ Conduct a UCT search for itermax iterations starting from rootstate.
-        Return the best move from the rootstate.
-        Assumes 2 alternating players (player 1 starts), with game results in the range [0.0, 1.0]."""
+
     if rootstate.is_initial:
         nodeMap.clear()
 
     isMaxPlayer = rootstate.next_player() == 0
 
-    rootnode = Node(state=rootstate)
+    if rootstate in nodeMap:
+        rootnode = nodeMap[rootstate]
+        rootnode.parentNode = None
+    else:
+        rootnode = Node(state=rootstate)
+        nodeMap[rootstate] = rootnode
 
     for i in range(itermax):
         node = rootnode
-        state = copy.deepcopy(rootstate)
 
         # Select
         while node.untriedMoves == [] and node.childNodes != []:  # node is fully expanded and non-terminal
             node = node.uct_select_child(isMaxPlayer)
-            state = node.state
+            # state = node.state
+        state = copy.deepcopy(node.state)
 
         # Expand
         if node.untriedMoves != []:  # if we can expand (i.e. state/node is non-terminal)
@@ -69,29 +73,25 @@ def uct(rootstate, itermax):
         while not state.game_over():  # while state is non-terminal
             state = state.result(random.choice(state.legal_moves()))
 
-        # if state.winner() == 0:
-        #     win = 0.5
-        # elif state.winner() == 1:  # Player 0 wins
-        #     win = 1 if rootstate.next_player() == 1 else 0
-        # else:  # Player 1 wins
-        #     win = 1 if rootstate.next_player() == 0 else 0
-
-        # win = (state.winner() + 1) * (rootstate.next_player() - 0.5)
-        # win = (state.winner() + 1) * ((1 - rootstate.next_player()) - 0.5)
-        win = (state.winner() + 1) / 2
-        # win = (state.winner() + 1) / 2 if isMaxPlayer else 1- (state.winner() + 1) / 2
-        # win = state.winner()
-        # print(win)
-
         # Backpropagate
+        curWinner = state.winner()
         while node is not None:
+            # 41.5%
+            win = curWinner * (node.state.next_player() - 0.5) * 2
+            
+            # 42.5%
+            #win = 1
+            #if curWinner == 0:
+            #    win = 0.5
+            #elif (curWinner == 1 and node.state.next_player() == 0) or (curWinner == -1 and node.state.next_player() == 1):
+            #    win = 0
             node.update(win)
             node = node.parentNode
 
-    if isMaxPlayer:
-        return sorted(rootnode.childNodes, key=lambda c: c.wins / c.visits)[-1].move
-    else:
-        return sorted(rootnode.childNodes, key=lambda c: c.wins / c.visits)[0].move
+    #if isMaxPlayer:
+    return nodeMap[sorted(rootnode.childNodes, key=lambda c: nodeMap[c].wins / nodeMap[c].visits)[-1]].move
+    #else:
+    #return nodeMap[sorted(rootnode.childNodes, key=lambda c: nodeMap[c].wins / nodeMap[c].visits)[0]].move
 
 
 def mcts_strategy(n):
@@ -100,3 +100,4 @@ def mcts_strategy(n):
         return move
 
     return fxn
+
