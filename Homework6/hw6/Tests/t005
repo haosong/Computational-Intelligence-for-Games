@@ -1,0 +1,20 @@
+#!/bin/bash
+# 210 points
+
+trap "/usr/bin/killall -q -u $USER CheckScore 2>/dev/null" 0 1 2 3 9 15
+trap "/bin/rm -f $STDERR" 0 1 2 3 9 15
+trap "/usr/bin/killall -q -u $USER cat_score.sh 2>/dev/null" 0 1 2 3 9 15
+trap "/bin/rm -f pipe" 0 1 2 3 9 15
+
+# create and fill pipe
+mkfifo pipe
+/c/cs474/hw6/Tests/cat_score.sh > pipe &
+
+/c/cs474/bin/run -stderr=/dev/null ./CheckScore 210 < pipe
+
+# remove pipe
+rm -rf pipe
+
+# clean up temp file
+cd ..
+rm -rf temp

@@ -1,0 +1,2 @@
+#!/bin/bash
+java -classpath /c/cs474/hw6 CheckScore $1
