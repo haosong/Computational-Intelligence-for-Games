@@ -15,8 +15,9 @@ def main():
         print("USAGE: python3", sys.argv[0], " num-games")
         sys.exit(1)
         
-    model = nn.train();
-    strat = nn.NNStrategy(model)
+    # model = nn.train();
+    # strat = nn.NNStrategy(model)
+    strat = nn.NNStrategy()
     print("RESULT:", yahtzee.evaluate_strategy(games, strat.choose_dice, strat.choose_category))
 
     

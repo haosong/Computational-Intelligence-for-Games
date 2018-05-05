@@ -1,11 +1,14 @@
 import numpy as np
-from keras.models import Sequential
+import datetime
+from keras.models import Sequential, load_model
 from keras.layers import Dense, Activation, Dropout
 from keras import optimizers
 import sys
 from yahtzee import YahtzeeScoresheet, YahtzeeRoll
 
 category = ["1", "2", "3", "4", "5", "6", "3K", "4K", "FH", "SS", "LS", "C", "Y", "Y+"]  # Y/Y+, UP
+
+output_label = ["1", "2", "3", "4", "5", "6", "K", "FH", "S", "C", "RE"]
 
 label_dict = {
     "1": [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -58,6 +61,9 @@ def process(line, has_label):
     else:
         up_score /= 63
     vector.append(up_score)
+
+    # for i in range(1, 7):
+    #     vector.append(roll.count(i) / 5)
 
     roll_list = roll.as_list()
     vector.extend([(x - 1) / 5 for x in roll_list])
@@ -143,13 +149,14 @@ def process(line, has_label):
         one_vector = vector + label
         # print(one_vector)
         print(*one_vector, sep=',')
-        # return one_vector
+        return one_vector
     else:
-        # return [vector]
-        pass
+        return vector
 
 
 def train():
+    np.random.seed(7)
+
     x_all = []
     y_all = []
     # read from stdin
@@ -175,63 +182,110 @@ def train():
 
     # compile the model
     sgd = optimizers.SGD(lr=0.1, decay=1e-6, momentum=0.8, nesterov=True)
-    model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
     # fit the model
-    model.fit(x_train, y_train, epochs=100, batch_size=5)
+    model.fit(x_train, y_train, epochs=100, batch_size=50)
 
     y_predict = [max(enumerate(y), key=lambda x: x[1])[0] for y in model.predict(x_test)]
     y_correct = [max(enumerate(y), key=lambda x: x[1])[0] for y in y_test]
-    print(sum((1 if y[0] == y[1] else 0) for y in zip(y_predict, y_correct)) / len(y_predict))
 
-    # evaluate the model
-    # training accuracy
-    # res = model.evaluate(X, Y)
-    # print("\n%s: %.2f%%" % (model.metrics_names[1], res[1] * 100))
+    test_set_accu = sum((1 if y[0] == y[1] else 0) for y in zip(y_predict, y_correct)) / len(y_predict)
+    print(test_set_accu)
 
-
-'''
-def train():
-    # define a full-connected network structure with 3 layers
-    model = Sequential()
-    model.add(Dense(300, input_dim=X.shape[1], activation='relu'))
-    model.add(Dropout(0.1))
-    model.add(Dense(Y.shape[1], activation='sigmoid'))
-
-    # compile the model
-    sgd = SGD(lr=0.1, decay=1e-6, momentum=0.8, nesterov=True)
-    model.compile(loss='categorical_crossentropy', optimizer=sgd)
-
-    # fit the model
-    model.fit(X, Y, epochs=100, batch_size=5)
-
-    # evaluate the model
-    # training accuracy
-    res = model.evaluate(X, Y)
-    print("\n%s: %.2f%%" % (model.metrics_names[1], res[1] * 100))
-
-    model = Sequential()
-    model.add(Dense(32, activation='relu', input_dim=100))
-    model.add(Dense(10, activation='softmax'))
-    model.compile(optimizer='rmsprop',
-                  loss='categorical_crossentropy',
-                  metrics=['accuracy'])
-    pass
-'''
+    model.save('my_model.h5')
+    # model_json = model.to_json()
+    # print(model_json)
+    # with open("model.json" + datetime.datetime.now().isoformat() + str(test_set_accu), "w") as json_file:
+    #     json_file.write(model_json)
+    return model
 
 
 class NNStrategy:
-    def __init__(self, model):
-        self.model = model
+    def __init__(self):
+        self.model = load_model('my_model_230.h5')
+        # self.model = model
         pass
 
-    def choose_dice(self):
-        prediction = self.model.predict()  # np.array(tk.texts_to_sequences(text))
-        print(prediction)
-        pass
+    def choose_dice(self, sheet, roll, rerolls):
+        line = sheet.as_state_string() + "," + "".join(str(x) for x in roll.as_list()) + "," + str(rerolls)
+        # print(line)
+        x = [process(line, False)]
+        predict = self.model.predict(np.matrix(x))[0]
+        # print("c_d_predict")
+        # print(predict)
+        # y_predict = [max(enumerate(y), key=lambda x: x[1])[0] for y in predict]
+        label_order = sorted(range(len(predict)), key=lambda i: predict[i], reverse=True)
+        # print(label_order)
+        label = label_order[0]
+        # output_label = ["1", "2", "3", "4", "5", "6", "K", "FH", "S", "C", "RE"]
+        # category = ["1", "2", "3", "4", "5", "6", "3K", "4K", "FH", "SS", "LS", "C", "Y", "Y+"]  # Y/Y+, UP
+        # label_index = output_label.index(category[label])
+        if label < 6:
+            keep = roll.select_all([label + 1])  # select 1 ~ 6
+        elif output_label[label] == "K":
+            keep = roll.select_for_n_kind(sheet, rerolls)
+        elif output_label[label] == "FH":
+            keep = roll.select_for_full_house()
+        elif output_label[label] == "C":
+            keep = roll.select_for_chance(rerolls)
+        elif output_label[label] == "S":
+            keep = roll.select_for_straight(sheet)
+        elif output_label[label] == "RE":
+            keep = YahtzeeRoll.parse("")
+        else:
+            pass
+            # print("no found!!!!!!!!!!!!!")
+            # print(output_label[label])
+        return keep
 
-    def choose_category(self):
-        pass
+    def choose_category(self, sheet, roll):
+        line = sheet.as_state_string() + "," + "".join(str(x) for x in roll.as_list()) + "," + str(0)
+        # print(line)
+        x = [process(line, False)]
+        predict = self.model.predict(np.matrix(x))[0]
+        # print("c_c_predict")
+        # print(predict)
+        label_order = sorted(range(len(predict)), key=lambda i: predict[i], reverse=True)
+        # print(label_order)
+        for index in range(0, len(label_order)):
+            label = output_label[label_order[index]]
+            # print(label)
+            if label == "RE":
+                continue
+            if label in category:
+                if sheet.is_marked(category.index(label)):
+                    continue
+                else:
+                    return category.index(label)
+            elif label == "K":
+                if sheet.is_marked(category.index("3K")) \
+                        and sheet.is_marked(category.index("4K")) \
+                        and sheet.is_marked(category.index("Y")):
+                    continue
+                else:
+                    if roll.is_n_kind(5) and not sheet.is_marked(category.index("Y")):
+                        return category.index("Y")
+                    elif roll.is_n_kind(4) and not sheet.is_marked(category.index("4K")):
+                        return category.index("4K")
+                    elif roll.is_n_kind(3) and not sheet.is_marked(category.index("3K")):
+                        return category.index("3K")
+                    else:
+                        continue
+            elif label == "S":
+                if sheet.is_marked(category.index("SS")) \
+                        and sheet.is_marked(category.index("LS")):
+                    continue
+                else:
+                    if roll.is_straight(5) and not sheet.is_marked(category.index("LS")):
+                        return category.index("LS")
+                    elif roll.is_straight(4) and not sheet.is_marked(category.index("SS")):
+                        return category.index("SS")
+                    else:
+                        continue
+        for i in range(13):
+            if not sheet.is_marked(i):
+                return i
 
 
 # nninput = self.encode()
@@ -244,4 +298,4 @@ if __name__ == "__main__":
     # Generate train set
     # for line in sys.stdin:
     #     process(line, True)
-    #     print("\n")
+        # print("\n")
