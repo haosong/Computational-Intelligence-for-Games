@@ -170,13 +170,14 @@ def train():
         y_all.append(data[22:])
 
     test_size = int(len(x_all) / 5)
+    test_size = 0
     train_size = len(x_all) - test_size
 
     x_train = np.matrix(x_all[:train_size])
     y_train = np.matrix(y_all[:train_size])
 
-    x_test = np.matrix(x_all[train_size:])
-    y_test = y_all[train_size:]
+    # x_test = np.matrix(x_all[train_size:])
+    # y_test = y_all[train_size:]
 
     # define a full-connected network structure with 3 layers
     model = Sequential()
@@ -195,11 +196,11 @@ def train():
     # fit the model
     model.fit(x_train, y_train, epochs=100, batch_size=64)
 
-    y_predict = [max(enumerate(y), key=lambda x: x[1])[0] for y in model.predict(x_test)]
-    y_correct = [max(enumerate(y), key=lambda x: x[1])[0] for y in y_test]
+    # y_predict = [max(enumerate(y), key=lambda x: x[1])[0] for y in model.predict(x_test)]
+    # y_correct = [max(enumerate(y), key=lambda x: x[1])[0] for y in y_test]
 
-    test_set_accu = sum((1 if y[0] == y[1] else 0) for y in zip(y_predict, y_correct)) / len(y_predict)
-    print(test_set_accu)
+    # test_set_accu = sum((1 if y[0] == y[1] else 0) for y in zip(y_predict, y_correct)) / len(y_predict)
+    # print(test_set_accu)
 
     model.save('my_model.h5')
     # model_json = model.to_json()
@@ -248,6 +249,8 @@ class NNStrategy:
         return keep
 
     def choose_category(self, sheet, roll):
+        f roll.is_n_kind(5):
+            return category.index("Y")
         line = sheet.as_state_string() + "," + "".join(str(x) for x in roll.as_list()) + "," + str(0)
         # print(line)
         x = [process(line, False)]
