@@ -226,27 +226,30 @@ class NNStrategy:
         # y_predict = [max(enumerate(y), key=lambda x: x[1])[0] for y in predict]
         label_order = sorted(range(len(predict)), key=lambda i: predict[i], reverse=True)
         # print(label_order)
-        label = label_order[0]
         # output_label = ["1", "2", "3", "4", "5", "6", "K", "FH", "S", "C", "RE"]
         # category = ["1", "2", "3", "4", "5", "6", "3K", "4K", "FH", "SS", "LS", "C", "Y", "Y+"]  # Y/Y+, UP
         # label_index = output_label.index(category[label])
-        if label < 6:
-            keep = roll.select_all([label + 1])  # select 1 ~ 6
-        elif output_label[label] == "K":
-            keep = roll.select_for_n_kind(sheet, rerolls)
-        elif output_label[label] == "FH":
-            keep = roll.select_for_full_house()
-        elif output_label[label] == "C":
-            keep = roll.select_for_chance(rerolls)
-        elif output_label[label] == "S":
-            keep = roll.select_for_straight(sheet)
-        elif output_label[label] == "RE":
-            keep = YahtzeeRoll.parse("")
-        else:
-            pass
-            # print("no found!!!!!!!!!!!!!")
-            # print(output_label[label])
-        return keep
+        for index in range(0, len(label_order)):
+            label = label_order[index]
+            if label < 6:
+                if sheet.is_marked(label):
+                    continue
+                else:
+                    return roll.select_all([label + 1])
+            elif output_label[label] == "K" and not (sheet.is_marked(category.index("3K")) and sheet.is_marked(category.index("4K")) and sheet.is_marked(category.index("Y"))):
+                return roll.select_for_n_kind(sheet, rerolls)
+            elif output_label[label] == "FH" and not sheet.is_marked(category.index("FH")):
+                return roll.select_for_full_house()
+            elif output_label[label] == "C" and not sheet.is_marked(category.index("C")):
+                return roll.select_for_chance(rerolls)
+            elif output_label[label] == "S" and not (sheet.is_marked(category.index("SS")) and sheet.is_marked(category.index("LS"))):
+                return roll.select_for_straight(sheet)
+            elif output_label[label] == "RE":
+                return YahtzeeRoll.parse("")
+            else:
+                continue
+                # print("no found!!!!!!!!!!!!!")
+                # print(output_label[label])
 
     def choose_category(self, sheet, roll):
         if roll.is_n_kind(5) and not sheet.is_marked(category.index("Y")):
