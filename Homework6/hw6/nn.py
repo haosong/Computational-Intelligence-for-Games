@@ -176,16 +176,18 @@ def train():
 
     # define a full-connected network structure with 3 layers
     model = Sequential()
-    model.add(Dense(300, activation='relu', input_dim=x_train.shape[1]))
+    model.add(Dense(200, activation='relu', input_dim=x_train.shape[1]))
     model.add(Dropout(0.1))
-    model.add(Dense(y_train.shape[1], activation='softmax'))
+    model.add(Dense(100, activation='relu'))
+    model.add(Dropout(0.1))
+    model.add(Dense(y_train.shape[1], activation='sigmoid'))
 
     # compile the model
-    sgd = optimizers.SGD(lr=0.1, decay=1e-6, momentum=0.8, nesterov=True)
+    sgd = optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
     # fit the model
-    model.fit(x_train, y_train, epochs=100, batch_size=50)
+    model.fit(x_train, y_train, epochs=100, batch_size=32)
 
     y_predict = [max(enumerate(y), key=lambda x: x[1])[0] for y in model.predict(x_test)]
     y_correct = [max(enumerate(y), key=lambda x: x[1])[0] for y in y_test]
@@ -203,7 +205,7 @@ def train():
 
 class NNStrategy:
     def __init__(self):
-        self.model = load_model('my_model_230.h5')
+        self.model = load_model('my_model.h5')
         # self.model = model
         pass
 
@@ -293,9 +295,9 @@ class NNStrategy:
 # cat = max(zip(range(())))
 if __name__ == "__main__":
     # Train
-    train()
+    # train()
 
     # Generate train set
-    # for line in sys.stdin:
-    #     process(line, True)
+    for line in sys.stdin:
+        process(line, True)
         # print("\n")
