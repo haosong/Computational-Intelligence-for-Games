@@ -249,7 +249,7 @@ class NNStrategy:
         return keep
 
     def choose_category(self, sheet, roll):
-        f roll.is_n_kind(5):
+        if roll.is_n_kind(5) and not sheet.is_marked(category.index("Y")):
             return category.index("Y")
         line = sheet.as_state_string() + "," + "".join(str(x) for x in roll.as_list()) + "," + str(0)
         # print(line)
@@ -274,26 +274,34 @@ class NNStrategy:
                         and sheet.is_marked(category.index("4K")) \
                         and sheet.is_marked(category.index("Y")):
                     continue
+                elif roll.is_n_kind(5) and not sheet.is_marked(category.index("Y")):
+                    return category.index("Y")
+                elif roll.is_n_kind(4) and not sheet.is_marked(category.index("4K")):
+                    return category.index("4K")
+                elif roll.is_n_kind(3) and not sheet.is_marked(category.index("3K")):
+                    return category.index("3K")
+                elif not sheet.is_marked(category.index("Y")):
+                    return category.index("Y")
+                elif not sheet.is_marked(category.index("4K")):
+                    return category.index("4K")
+                elif not sheet.is_marked(category.index("3K")):
+                    return category.index("3K")
                 else:
-                    if roll.is_n_kind(5) and not sheet.is_marked(category.index("Y")):
-                        return category.index("Y")
-                    elif roll.is_n_kind(4) and not sheet.is_marked(category.index("4K")):
-                        return category.index("4K")
-                    elif roll.is_n_kind(3) and not sheet.is_marked(category.index("3K")):
-                        return category.index("3K")
-                    else:
-                        continue
+                    continue
             elif label == "S":
                 if sheet.is_marked(category.index("SS")) \
                         and sheet.is_marked(category.index("LS")):
                     continue
+                elif roll.is_straight(5) and not sheet.is_marked(category.index("LS")):
+                    return category.index("LS")
+                elif roll.is_straight(4) and not sheet.is_marked(category.index("SS")):
+                    return category.index("SS")
+                elif not sheet.is_marked(category.index("LS")):
+                    return category.index("LS")
+                elif not sheet.is_marked(category.index("SS")):
+                    return category.index("SS")
                 else:
-                    if roll.is_straight(5) and not sheet.is_marked(category.index("LS")):
-                        return category.index("LS")
-                    elif roll.is_straight(4) and not sheet.is_marked(category.index("SS")):
-                        return category.index("SS")
-                    else:
-                        continue
+                    continue
         for i in range(13):
             if not sheet.is_marked(i):
                 return i
