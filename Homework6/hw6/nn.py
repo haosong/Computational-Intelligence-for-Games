@@ -62,11 +62,11 @@ def process(line, has_label):
         up_score /= 63
     vector.append(up_score)
 
-    # for i in range(1, 7):
-    #     vector.append(roll.count(i) / 5)
+    for i in range(1, 7):
+        vector.append(roll.count(i) / 5)
 
-    roll_list = roll.as_list()
-    vector.extend([(x - 1) / 5 for x in roll_list])
+    # roll_list = roll.as_list()
+    # vector.extend([(x - 1) / 5 for x in roll_list])
     vector.append(reroll / 2)
 
     if has_label:
@@ -79,15 +79,19 @@ def process(line, has_label):
             not_found = True
             result = result[1:-1]
             result_roll = YahtzeeRoll.parse(result)
-            if result == "":
+            if len(set(result)) == 1 and len(result) == 5:
+                label = "NK"
+                not_found = False
+            if not_found and result == "":
                 label = "RE"
                 not_found = False
-            for i in range(1, 7):
-                select = ''.join(str(n) for n in roll.select_all([i]).as_list())
-                if select != '' and select == result and vector[i - 1] == 0:
-                    label = str(i)
-                    not_found = False
-                    break
+            if not_found:
+                for i in range(1, 7):
+                    select = ''.join(str(n) for n in roll.select_all([i]).as_list())
+                    if select != '' and select == result and vector[i - 1] == 0:
+                        label = str(i)
+                        not_found = False
+                        break
             if not_found:
                 select = ''.join(str(n) for n in roll.select_for_full_house().as_list())
                 if select != '' and select == result and vector[8] == 0:
@@ -162,8 +166,8 @@ def train():
     # read from stdin
     for line in sys.stdin:
         data = list(map(float, line.split(',')))
-        x_all.append(data[0:21])
-        y_all.append(data[21:])
+        x_all.append(data[0:22])
+        y_all.append(data[22:])
 
     test_size = int(len(x_all) / 5)
     train_size = len(x_all) - test_size
@@ -176,7 +180,9 @@ def train():
 
     # define a full-connected network structure with 3 layers
     model = Sequential()
-    model.add(Dense(200, activation='relu', input_dim=x_train.shape[1]))
+    model.add(Dense(100, activation='relu', input_dim=x_train.shape[1]))
+    model.add(Dropout(0.1))
+    model.add(Dense(100, activation='relu'))
     model.add(Dropout(0.1))
     model.add(Dense(100, activation='relu'))
     model.add(Dropout(0.1))
@@ -184,10 +190,10 @@ def train():
 
     # compile the model
     sgd = optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    model.compile(loss='binary_crossentropy', optimizer='nadam', metrics=['accuracy'])
 
     # fit the model
-    model.fit(x_train, y_train, epochs=100, batch_size=32)
+    model.fit(x_train, y_train, epochs=100, batch_size=64)
 
     y_predict = [max(enumerate(y), key=lambda x: x[1])[0] for y in model.predict(x_test)]
     y_correct = [max(enumerate(y), key=lambda x: x[1])[0] for y in y_test]
@@ -295,9 +301,9 @@ class NNStrategy:
 # cat = max(zip(range(())))
 if __name__ == "__main__":
     # Train
-    # train()
+    train()
 
     # Generate train set
-    for line in sys.stdin:
-        process(line, True)
+    # for line in sys.stdin:
+        # process(line, True)
         # print("\n")
