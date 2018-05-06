@@ -194,7 +194,7 @@ def train():
     model.compile(loss='binary_crossentropy', optimizer='nadam', metrics=['accuracy'])
 
     # fit the model
-    model.fit(x_train, y_train, epochs=100, batch_size=64)
+    model.fit(x_train, y_train, epochs=150, batch_size=128)
 
     # y_predict = [max(enumerate(y), key=lambda x: x[1])[0] for y in model.predict(x_test)]
     # y_correct = [max(enumerate(y), key=lambda x: x[1])[0] for y in y_test]
@@ -211,9 +211,11 @@ def train():
 
 
 class NNStrategy:
-    def __init__(self):
-        self.model = load_model('my_model.h5')
-        # self.model = model
+    def __init__(self, model=None):
+        if model is None:
+            self.model = load_model('my_model.h5')
+        else:
+            self.model = model
         pass
 
     def choose_dice(self, sheet, roll, rerolls):
@@ -229,7 +231,7 @@ class NNStrategy:
         # output_label = ["1", "2", "3", "4", "5", "6", "K", "FH", "S", "C", "RE"]
         # category = ["1", "2", "3", "4", "5", "6", "3K", "4K", "FH", "SS", "LS", "C", "Y", "Y+"]  # Y/Y+, UP
         # label_index = output_label.index(category[label])
-        for index in range(0, len(label_order)):
+        for index in range(len(label_order)):
             label = label_order[index]
             if label < 6:
                 if sheet.is_marked(label):
@@ -250,6 +252,7 @@ class NNStrategy:
                 continue
                 # print("no found!!!!!!!!!!!!!")
                 # print(output_label[label])
+        # return YahtzeeRoll.parse("")
 
     def choose_category(self, sheet, roll):
         if roll.is_n_kind(5) and not sheet.is_marked(category.index("Y")):
@@ -262,7 +265,7 @@ class NNStrategy:
         # print(predict)
         label_order = sorted(range(len(predict)), key=lambda i: predict[i], reverse=True)
         # print(label_order)
-        for index in range(0, len(label_order)):
+        for index in range(len(label_order)):
             label = output_label[label_order[index]]
             # print(label)
             if label == "RE":
